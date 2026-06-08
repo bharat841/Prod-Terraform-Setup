@@ -1,0 +1,48 @@
+name: Sample - approval test (dev & test)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # PLAN: runs freely, no approval. Just prints fake init/validate/plan output.
+  # ---------------------------------------------------------------------------
+  plan:
+    name: Plan (${{ matrix.environment }})
+    runs-on: [self-hosted, tf]
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [dev, test]
+    steps:
+      - name: Terraform Init
+        run: echo "init for ${{ matrix.environment }}"
+
+      - name: Terraform Validate
+        run: echo "validate for ${{ matrix.environment }}"
+
+      - name: Terraform Plan
+        run: echo "plan for ${{ matrix.environment }}"
+
+  # ---------------------------------------------------------------------------
+  # APPLY: PAUSES for manual approval (protected environment <env>-apply),
+  # then just prints yes/no instead of applying anything.
+  # ---------------------------------------------------------------------------
+  apply:
+    name: Apply (${{ matrix.environment }})
+    needs: plan
+    runs-on: [self-hosted, tf]
+    environment: ${{ matrix.environment }}-apply   # <-- approval gate
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [dev, test]
+    steps:
+      - name: Terraform Apply (fake)
+        run: |
+          echo "yes"
+          echo "no"
+          echo "Apply step ran for ${{ matrix.environment }} after approval"
